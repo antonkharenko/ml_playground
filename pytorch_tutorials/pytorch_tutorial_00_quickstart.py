@@ -1,5 +1,6 @@
 # Refer to https://pytorch.org/tutorials/beginner/basics/quickstart_tutorial.html
 
+import time
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -34,13 +35,14 @@ for X, y in test_dataloader:
     break
 
 # Get cpu, gpu or mps device for training.
-device = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "mps"
-    if torch.backends.mps.is_available()
-    else "cpu"
-)
+# device = (
+#     "cuda"
+#     if torch.cuda.is_available()
+#     else "mps"
+#     if torch.backends.mps.is_available()
+#     else "cpu"
+# )
+device = "cpu"  # just use CPU for small network
 print(f"Using {device} device")
 
 # Define model
@@ -60,6 +62,7 @@ class NeuralNetwork(nn.Module):
         x = self.flatten(x)
         logits = self.linear_relu_stack(x)
         return logits
+
 
 model = NeuralNetwork().to(device)
 print(model)
@@ -86,6 +89,7 @@ def train(dataloader, model, loss_fn, optimizer):
             loss, current = loss.item(), (batch + 1) * len(X)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
+
 def test(dataloader, model, loss_fn):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
@@ -101,17 +105,18 @@ def test(dataloader, model, loss_fn):
     correct /= size
     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
-# Uncomment for re-training
 
-# epochs = 5
-# for t in range(epochs):
-#     print(f"Epoch {t+1}\n-------------------------------")
-#     train(train_dataloader, model, loss_fn, optimizer)
-#     test(test_dataloader, model, loss_fn)
-# print("Done!")
-#
-# torch.save(model.state_dict(), "model.pth")
-# print("Saved PyTorch Model State to model.pth")
+# Uncomment for re-training
+start_time = time.time()
+epochs = 10
+for t in range(epochs):
+    print(f"Epoch {t+1}\n-------------------------------")
+    train(train_dataloader, model, loss_fn, optimizer)
+    test(test_dataloader, model, loss_fn)
+print(f"Done! Training time: {time.time() - start_time} seconds")
+
+torch.save(model.state_dict(), "model.pth")
+print("Saved PyTorch Model State to model.pth")
 
 
 # The process for loading a model includes re-creating the model structure and loading the state dictionary into it.
@@ -132,6 +137,7 @@ classes = [
 ]
 
 model.eval()
+start_time = time.time()
 with torch.no_grad():
     for i in range(20):
         x, y = test_data[i][0], test_data[i][1]
@@ -139,3 +145,4 @@ with torch.no_grad():
         pred = model(x)
         predicted, actual = classes[pred[0].argmax(0)], classes[y]
         print(f'{i}) Predicted: "{predicted}", Actual: "{actual}"')
+print(f"Inference time: {time.time() - start_time} seconds")
